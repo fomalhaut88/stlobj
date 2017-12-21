@@ -1,0 +1,11 @@
+newmtl m1
+    Ka 1.0 0.5 0.0
+    Kd 1.0 1.0 0.0
+    Ks 0.0 0.0 1.0
+    Ns 20.0
+
+newmtl m2
+    map_Ka tex_a.jpg
+    map_Kd tex_d.jpg
+    map_Ks tex_s.jpg
+    Ns 20.0
