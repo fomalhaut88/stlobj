@@ -1,0 +1,3 @@
+#!/bin/bash
+SCRIPT_PATH="`dirname \"$0\"`"
+python3 $SCRIPT_PATH/stl2obj.py "$@"
