@@ -6,12 +6,19 @@ class ObjLoader:
         self._mtllib = None
         self._objects = {}
 
-    def attach(self, obj):
-        self._objects[obj.name] = obj
+    def attach(self, obj, ignore_empty=False):
+        if not ignore_empty or obj.f:
+            self._objects[obj.name] = obj
 
     def parse(self, path):
-        cur_obj = None
+        cur_obj = ObjObject('')
+
         with open(path) as fin:
+            v_shift_cur = 0
+            vt_shift_cur = 0
+            vn_shift_cur = 0
+            vp_shift_cur = 0
+
             v_shift = 0
             vt_shift = 0
             vn_shift = 0
@@ -31,28 +38,38 @@ class ObjLoader:
 
                 elif line.startswith("o "):
                     name = line[2:]
+
+                    self.attach(cur_obj, ignore_empty=True)
                     cur_obj = ObjObject(name)
-                    self._objects[name] = cur_obj
+
+                    v_shift += v_shift_cur
+                    vt_shift += vt_shift_cur
+                    vn_shift += vn_shift_cur
+                    vp_shift += vp_shift_cur
+                    v_shift_cur = 0
+                    vt_shift_cur = 0
+                    vn_shift_cur = 0
+                    vp_shift_cur = 0
 
                 elif line.startswith("v "):
                     vec = self._extract_vector(line[2:], slice_=3)
                     cur_obj.v.append(vec)
-                    v_shift += 1
+                    v_shift_cur += 1
 
                 elif line.startswith("vt "):
                     vec = self._extract_vector(line[3:], slice_=3)
                     cur_obj.vt.append(vec)
-                    vt_shift += 1
+                    vt_shift_cur += 1
 
                 elif line.startswith("vn "):
                     vec = self._extract_vector(line[3:], slice_=3)
                     cur_obj.vn.append(vec)
-                    vn_shift += 1
+                    vn_shift_cur += 1
 
                 elif line.startswith("vp "):
                     vec = self._extract_vector(line[3:])
                     cur_obj.vp.append(vec)
-                    vp_shift += 1
+                    vp_shift_cur += 1
 
                 elif line.startswith("f "):
                     faces = self._parse_face(line[2:])
@@ -66,6 +83,8 @@ class ObjLoader:
 
                 elif line.startswith("usemtl "):
                     cur_obj.mtl = line[7:].strip()
+
+        self.attach(cur_obj, ignore_empty=True)
 
     def save(self, path):
         with open(path, 'w') as out:
@@ -121,6 +140,10 @@ class ObjLoader:
 
     def get_object(self, name):
         return self._objects[name]
+
+    @property
+    def mtllib(self):
+        return self._mtllib
 
     @classmethod
     def _vector_to_strig(cls, vec):
