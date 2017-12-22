@@ -55,6 +55,11 @@ class FloatField(MtlField):
         return float(s)
 
 
+class IntegerField(MtlField):
+    def parse(self, s):
+        return int(s)
+
+
 class StringField(MtlField):
     def parse(self, s):
         return s.strip()
@@ -66,6 +71,7 @@ class MtlObject:
         VectorField('Kd'),
         VectorField('Ks'),
         FloatField('Ns'),
+        IntegerField('illum'),
         StringField('map_Ka'),
         StringField('map_Kd'),
         StringField('map_Ks'),
