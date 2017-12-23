@@ -16,15 +16,10 @@ class ObjLoader:
         cur_obj = ObjObject('')
 
         with open(path) as fin:
-            v_shift_cur = 0
-            vt_shift_cur = 0
-            vn_shift_cur = 0
-            vp_shift_cur = 0
-
-            v_shift = 0
-            vt_shift = 0
-            vn_shift = 0
-            vp_shift = 0
+            v = []
+            vt = []
+            vn = []
+            vp = []
 
             for line in fin:
                 if '#' in line:
@@ -44,40 +39,52 @@ class ObjLoader:
                     self.attach(cur_obj, ignore_empty=True)
                     cur_obj = ObjObject(name)
 
-                    v_shift += v_shift_cur
-                    vt_shift += vt_shift_cur
-                    vn_shift += vn_shift_cur
-                    vp_shift += vp_shift_cur
-                    v_shift_cur = 0
-                    vt_shift_cur = 0
-                    vn_shift_cur = 0
-                    vp_shift_cur = 0
-
                 elif line.startswith("v "):
                     vec = self._extract_vector(line[2:], slice_=3)
-                    cur_obj.v.append(vec)
-                    v_shift_cur += 1
+                    v.append(vec)
 
                 elif line.startswith("vt "):
                     vec = self._extract_vector(line[3:], slice_=3)
-                    cur_obj.vt.append(vec)
-                    vt_shift_cur += 1
+                    vt.append(vec)
 
                 elif line.startswith("vn "):
                     vec = self._extract_vector(line[3:], slice_=3)
-                    cur_obj.vn.append(vec)
-                    vn_shift_cur += 1
+                    vn.append(vec)
 
                 elif line.startswith("vp "):
                     vec = self._extract_vector(line[3:])
-                    cur_obj.vp.append(vec)
-                    vp_shift_cur += 1
+                    vp.append(vec)
 
                 elif line.startswith("f "):
                     faces = self._parse_face(line[2:])
                     for face in faces:
-                        face = self._shift_face(face, -v_shift, -vt_shift, -vn_shift, -vp_shift)
-                        cur_obj.f.append(face)
+                        oface = []
+                        for idxs in face:
+                            oidxs = [None, None, None, None]
+
+                            if idxs[0] is not None:
+                                iv = idxs[0] - 1
+                                oiv = ObjObject.ensure_index(v[iv], cur_obj.v)
+                                oidxs[0] = oiv + 1
+
+                            if idxs[1] is not None:
+                                ivt = idxs[1] - 1
+                                oivt = ObjObject.ensure_index(vt[ivt], cur_obj.vt)
+                                oidxs[1] = oivt + 1
+
+                            if idxs[2] is not None:
+                                ivn = idxs[2] - 1
+                                oivn = ObjObject.ensure_index(vn[ivn], cur_obj.vn)
+                                oidxs[2] = oivn + 1
+
+                            if idxs[3] is not None:
+                                ivp = idxs[3] - 1
+                                oivp = ObjObject.ensure_index(vp[ivp], cur_obj.vp)
+                                oidxs[3] = oivp + 1
+
+                            oface.append(oidxs)
+
+                        cur_obj.f.append(oface)
 
                 elif line.startswith("s "):
                     if line[2:].strip() != 'off':
@@ -248,10 +255,10 @@ class ObjObject:
             v2 = triangle.vertices[1]
             v3 = triangle.vertices[2]
 
-            ni = cls._ensure_index(n, obj_object.vn)
-            v1i = cls._ensure_index(v1, obj_object.v)
-            v2i = cls._ensure_index(v2, obj_object.v)
-            v3i = cls._ensure_index(v3, obj_object.v)
+            ni = cls.ensure_index(n, obj_object.vn)
+            v1i = cls.ensure_index(v1, obj_object.v)
+            v2i = cls.ensure_index(v2, obj_object.v)
+            v3i = cls.ensure_index(v3, obj_object.v)
 
             face = [
                 [v1i + 1, None, ni + 1, None],
@@ -263,7 +270,7 @@ class ObjObject:
         return obj_object
 
     @classmethod
-    def _ensure_index(cls, elem, lst):
+    def ensure_index(cls, elem, lst):
         try:
             return lst.index(elem)
         except ValueError:
@@ -321,7 +328,7 @@ class ObjObject:
             else:
                 n = np.zeros(3)
 
-            index = self._ensure_index(n.tolist(), self.vn)
+            index = self.ensure_index(n.tolist(), self.vn)
 
             face[0][2] = index + 1
             face[1][2] = index + 1
