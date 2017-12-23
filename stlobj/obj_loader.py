@@ -232,32 +232,11 @@ class ObjObject:
     def has_normals(self):
         return bool(self.vn)
 
-    def calc_normals(self):
-        for _ in range(len(self.v)):
-            self.vn.append(np.zeros(3))
-
-        for face in self.f:
-            i1 = face[0][0] - 1
-            i2 = face[1][0] - 1
-            i3 = face[2][0] - 1
-
-            v1 = np.array(self.v[i1])
-            v2 = np.array(self.v[i2])
-            v3 = np.array(self.v[i3])
-
-            n = np.cross(v2 - v1, v3 - v1)
-
-            self.vn[i1] += n
-            self.vn[i2] += n
-            self.vn[i3] += n
-
-        for i in range(len(self.vn)):
-            self.vn[i] = list(self.vn[i] / np.linalg.norm(self.vn[i]))
-
-        for face in self.f:
-            face[0][2] = face[0][0]
-            face[1][2] = face[1][0]
-            face[2][2] = face[2][0]
+    def calc_normals(self, smooth=False):
+        if smooth:
+            self._calc_normals_smooth()
+        else:
+            self._calc_normals_polyhedron()
 
     @classmethod
     def from_stl_object(cls, obj):
@@ -290,3 +269,60 @@ class ObjObject:
         except ValueError:
             lst.append(elem)
             return len(lst) - 1
+
+    def _calc_normals_smooth(self):
+        del self.vn[:]
+
+        for _ in range(len(self.v)):
+            self.vn.append(np.zeros(3))
+
+        for face in self.f:
+            i1 = face[0][0] - 1
+            i2 = face[1][0] - 1
+            i3 = face[2][0] - 1
+
+            v1 = np.array(self.v[i1])
+            v2 = np.array(self.v[i2])
+            v3 = np.array(self.v[i3])
+
+            n = np.cross(v2 - v1, v3 - v1)
+
+            self.vn[i1] += n
+            self.vn[i2] += n
+            self.vn[i3] += n
+
+        for i in range(len(self.vn)):
+            nrm = np.linalg.norm(self.vn[i])
+            if nrm > 1e-6:
+                self.vn[i] /= nrm
+            self.vn[i] = self.vn[i].tolist()
+
+        for face in self.f:
+            face[0][2] = face[0][0]
+            face[1][2] = face[1][0]
+            face[2][2] = face[2][0]
+
+    def _calc_normals_polyhedron(self):
+        del self.vn[:]
+
+        for face in self.f:
+            i1 = face[0][0] - 1
+            i2 = face[1][0] - 1
+            i3 = face[2][0] - 1
+
+            v1 = np.array(self.v[i1])
+            v2 = np.array(self.v[i2])
+            v3 = np.array(self.v[i3])
+
+            n = np.cross(v2 - v1, v3 - v1)
+            nrm = np.linalg.norm(n)
+            if nrm > 1e-6:
+                n /= np.linalg.norm(n)
+            else:
+                n = np.zeros(3)
+
+            index = self._ensure_index(n.tolist(), self.vn)
+
+            face[0][2] = index + 1
+            face[1][2] = index + 1
+            face[2][2] = index + 1
