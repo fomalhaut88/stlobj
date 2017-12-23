@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+import numpy as np
+
 
 class ObjLoader:
     def __init__(self):
@@ -226,6 +228,36 @@ class ObjObject:
         self.vn = []
         self.vp = []
         self.f = []
+
+    def has_normals(self):
+        return bool(self.vn)
+
+    def calc_normals(self):
+        for _ in range(len(self.v)):
+            self.vn.append(np.zeros(3))
+
+        for face in self.f:
+            i1 = face[0][0] - 1
+            i2 = face[1][0] - 1
+            i3 = face[2][0] - 1
+
+            v1 = np.array(self.v[i1])
+            v2 = np.array(self.v[i2])
+            v3 = np.array(self.v[i3])
+
+            n = np.cross(v2 - v1, v3 - v1)
+
+            self.vn[i1] += n
+            self.vn[i2] += n
+            self.vn[i3] += n
+
+        for i in range(len(self.vn)):
+            self.vn[i] = list(self.vn[i] / np.linalg.norm(self.vn[i]))
+
+        for face in self.f:
+            face[0][2] = face[0][0]
+            face[1][2] = face[1][0]
+            face[2][2] = face[2][0]
 
     @classmethod
     def from_stl_object(cls, obj):

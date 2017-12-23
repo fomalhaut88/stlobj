@@ -21,4 +21,7 @@ setup(
     license="Free",
     long_description=open('README.md').read(),
     scripts=scripts,
+    install_requires=[
+        'numpy==1.13.3',
+    ],
 )
