@@ -10,9 +10,16 @@ python setup.py install
 
 ## Converting
 
+From STL to OBJ:
+
 ```
-$ stl2obj -f file.stl -t file.obj
-$ obj2stl -f file.obj -t file.stl
+stl2obj -f file.stl -t file.obj
+```
+
+From OBJ to STL:
+
+```
+obj2stl -f file.obj -t file.stl
 ```
 
 ## Parsing
