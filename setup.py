@@ -22,6 +22,6 @@ setup(
     long_description=open('README.md').read(),
     scripts=scripts,
     install_requires=[
-        'numpy==1.13.3',
+        'numpy==1.22.0',
     ],
 )
